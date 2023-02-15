@@ -1,0 +1,397 @@
+---
+title: "Inspiration Space"
+author: "Jintong Yu"
+date: "2023-02-13"
+output: 
+  html_document:
+      toc: true
+      toc_depth: 2
+      number_sections: true
+      toc_float:
+        collapsed: false
+        smooth_scroll: true
+params:
+   data_date: 2020-01-15
+---
+<style>
+  #TOC{
+  max-width: fit-content;
+  white-space: nowrap;
+  }
+</style>
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+# Age and Sex
+
+### Scatterplot
+```{r, include=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(plotly)
+library(highcharter)
+library(ggthemes)
+# read the csv file
+astronauts <- read_csv("astronauts.csv")
+
+# find the distinct astronauts
+astronauts$age_of_selection <- astronauts$year_of_selection - astronauts$year_of_birth
+distinct_ast <- astronauts[!duplicated(astronauts$number), ]
+
+# find the oldest and the youngest
+age_min <- min(distinct_ast$age_of_selection)
+age_max <- max(distinct_ast$age_of_selection)
+p_old <- distinct_ast %>% filter(distinct_ast$age_of_selection == age_max)
+p_young <- distinct_ast %>% filter(distinct_ast$age_of_selection == age_min)
+p_old_name <- p_old$name
+p_young_name <- p_young$name
+
+```
+
+Among all astronauts who participated in any space mission before `r params$data_date`, their ages varied when they were selected as astronauts.The plot below shows the overall distribution of the age of selection. By far, `r p_old_name` was selected at the oldest age and `r p_young_name` were selected at the youngest age.
+
+
+```{r scatter-age, echo = FALSE, message=FALSE, warning=FALSE}
+# define fixed color for sex
+my_colors <- c("#ee8a9e", "#8aebee")
+# plot a scatter plot
+pc1 <- ggplot(distinct_ast, aes(x=number, y=age_of_selection, color=sex)) +
+  geom_point(shape=1, size=3, stroke=1, alpha=0.7) +
+  scale_x_continuous(name="Astronauts",
+                     ) +
+  scale_y_continuous(name="Age of Selection",
+                     expand=c(0.1,0)) +
+  ggtitle("Age of Selection") +
+  labs(caption="Data Source: Astronauts Database (Stavnichuk & Corlett 2020)")
+# define a theme
+my_theme <- theme_minimal() +
+  theme(text=element_text(color = "gray20"),
+        legend.title=element_blank(),
+        legend.position=c("top"),
+        legend.direction = "horizontal",
+        legend.justification = 0.05,
+        legend.text = element_text(size = 11, color = "gray10"),
+        legend.key.height=unit(1,"line"),
+        legend.key.width=unit(3,"line"),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.margin = margin(t = 0, r = 0, b = 20, l = 5, unit = "pt"),
+        plot.caption=element_text(size=10, hjust=0.5),
+        plot.title = element_text(color = "black", size = 20, hjust=0.5))
+pc2 <- pc1 + my_theme 
+pc2
+
+```
+
+
+### Bar Chart
+
+In addition, it is obvious that there were fewer female astronauts and the distribution of their ages is less volatile than that of male astronauts. To further compare the age distribution by sex, you could refer to the following histogram:
+
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+
+# create bins for age of selection
+distinct_ast[distinct_ast$age_of_selection >= 20 & distinct_ast$age_of_selection <= 29, "age_bins"] <- "20-29"
+distinct_ast[distinct_ast$age_of_selection >= 30 & distinct_ast$age_of_selection <= 39, "age_bins"] <- "30-39"
+distinct_ast[distinct_ast$age_of_selection >= 40 & distinct_ast$age_of_selection <= 49, "age_bins"] <- "40-49"
+distinct_ast[distinct_ast$age_of_selection >= 50, "age_bins"] <- "50+"
+# bar chart for age_bins
+by_age_sex <- distinct_ast %>%
+  group_by(sex, age_bins) %>%
+  summarize(count_bins = n())
+pc3 <- ggplot(by_age_sex, aes(x=age_bins, y=count_bins, color=sex)) +
+  geom_bar(aes(fill=sex), stat="identity", position="dodge") +
+  scale_fill_manual(values=my_colors) +
+  labs(x="Age Groups", 
+       y="Count", 
+       title="The Distribution of Age of Selection by Sex",
+       caption="Data Source: Astronauts Database (Stavnichuk & Corlett 2020)") +
+  scale_x_discrete(labels = c("20-29", "30-39", "40-49", "50+")) +
+  geom_text(aes(label=count_bins), position=position_dodge(width=0.9), vjust=-0.25, show.legend=FALSE)
+pc4 <- pc3 + theme_minimal() +
+  theme(text=element_text(color = "gray20"),
+        legend.title=element_blank(),
+        legend.position=c("top"),
+        legend.direction = "horizontal",
+        legend.justification = 0.05,
+        legend.key.height=unit(1,"line"),
+        legend.key.width=unit(3,"line"),
+        plot.caption=element_text(size=10, hjust=0.5),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.margin = margin(t = 0, r = 0, b = 15, l = 5, unit = "pt"),
+        plot.title = element_text(color = "black", size = 20, hjust=0.5))
+pc4
+```
+
+As you can see, most of astronauts were selected in their thirties and no female astronauts were elder than 50 when they were selected.
+
+### Discussion
+
+As a result, I would recommend the second chart for the final output. While readers may only gauge that the distribution of age is concentrated in the range of 30 to 40 by reading the first chart, they can easily tell the number of astronauts in each age group as well as compare age distributions by sex through the second chart.
+
+Principles Applied:
+
+- **Preattentive Effects**: since people can process preattentive attributes easily, I used color to magnify the comparison between male and female
+
+- **Elementary Perceptual Task**: while the baseline makes reading easier, I add the baseline of 20 in the first graph to show the lowest limit of age.
+
+- **Proximity**: as elements close to each other are perceived as one group, I created age bins and utilized a bar chart to distinguish different age groups.
+
+
+
+# Nationality
+
+The number of nations involved in each space mission varied for the past decades. As you can see from the line chart below, There was an increasing number of nations participated in the space exploration starting in 1977. However, after the trend reached the summit in 1992, the trend started to go downward.
+
+The line chart is recommended in this situation as it displays the trends of nations' involvement in space missions. In addition, the interactive attributes of the plot help readers to shorten the time of processing information, in other words, readers can easily get the information of any spike using the hoverinfo.
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+# number of distinct nationalities by year
+by_year <- distinct_ast %>%
+  group_by(year_of_mission) %>%
+  summarise(count_nation=n_distinct(nationality))
+t1 <- list(
+  color="black",
+  size=20
+)
+t2 <- list(
+  color="grey20"
+)
+
+fig <- by_year %>%
+  plot_ly(
+    type='scatter',
+    mode='lines',
+    x=~year_of_mission,
+    y=~count_nation,
+    hovertemplate=paste(
+      "Year: %{x:,}<br>",
+      "Number of Nations: %{y:,}",
+      "<extra></extra>"
+    )
+  ) %>% layout(title=list(text="Number of Nations Participated Each Year", font=t1), 
+               width=550,
+               height=400,
+               xaxis=list(title="Year", font=t2), 
+               yaxis=list(title="Count", font=t2), 
+               margin=list(autoexpand=FALSE, t=60, r=30, b=80),
+               annotations=list(
+                 x=0.84, y=-0.3, 
+                 text="Data Source: Astronauts Database (Stavnichuk & Corlett 2020)", 
+                 showarrow=F,xref='paper', yref='paper', xanchor='right', 
+                 yanchor='auto', xshift=0, yshift=0, font=list(size=10)))
+               #width=650, height=440)
+fig
+```
+
+# Space Walks
+
+```{r, include=FALSE}
+# check if there are people using same names
+n_num = n_distinct(astronauts$number)
+n_name = n_distinct(astronauts$name)
+#n_num == n_name # true: names are distinct
+
+# group_by and calculate
+by_ast <- astronauts %>%
+  group_by(name) %>%
+  summarise(eva_total_num=sum(eva_instances), eva_total_hrs=mean(total_eva_hrs, digits=4))
+
+#head(by_ast, n=5)
+
+# find the most hard-working astronauts
+hero <- by_ast %>%
+  filter(by_ast$eva_total_hrs == max(by_ast$eva_total_hrs))
+hero_name = hero[1,1]
+#hero_name
+hero_eva = max(by_ast$eva_total_num)
+hero_hrs = max(by_ast$eva_total_hrs)
+# bubble plot
+pc6 <- ggplot(by_ast, aes(x=eva_total_num, y=eva_total_hrs)) +
+  geom_smooth(method='lm',
+              formula=y~x,
+              se=FALSE,
+              color="#218ebd") +
+  geom_point() +
+  labs(x="Total Number of EVA", 
+       y="Total Hours of EVA", 
+       title="Individual Cumulative EVA",
+       caption="Data Source: Astronauts Database (Stavnichuk & Corlett 2020)") +
+  theme_minimal() +
+  theme(text=element_text(color = "gray20"),
+        #axis.ticks.x = element_blank(),
+        #axis.text.y = element_blank(),
+        #axis.ticks.y = element_blank(),
+        #scale_y_continuous()
+        plot.margin = margin(t = 0, r = 0, b = 20, l = 5, unit = "pt"),
+        plot.caption=element_text(size=10, hjust=0.5),
+        plot.title = element_text(color = "black", size = 20, hjust=0.5))
+library(ggrepel) 
+pc7 <- pc6 + geom_text_repel(aes(label=paste(name, eva_total_hrs, "hrs", eva_total_num, "times")),
+                color="gray20", size=3,
+                data=filter(by_ast, name %in% hero_name),
+                force=10)
+pc7
+```
+
+Here is a scatter plot with a fitted linear regression line about each astronaut's cumulative extravehicular activities (EVA) in space. The chart illustrates a positive linear relationship between the number of EVA and the total hours of EVA, and it also displays outliers, for example, `r hero_name` was the most "hard-working" astronauts with `r hero_eva` times and `r hero_hrs` hours of EVA.
+
+```{r, echo = FALSE}
+# check if there are people using same names
+n_num = n_distinct(astronauts$number)
+n_name = n_distinct(astronauts$name)
+#n_num == n_name # true: names are distinct
+
+# group_by and calculate
+by_ast <- astronauts %>%
+  group_by(name) %>%
+  summarise(eva_total_num=sum(eva_instances), eva_total_hrs=mean(total_eva_hrs, digits=4))
+
+#head(by_ast, n=5)
+
+# find the most hard-working astronauts
+hero <- by_ast %>%
+  filter(by_ast$eva_total_hrs == max(by_ast$eva_total_hrs))
+hero_name = hero[1,1]
+#hero_name
+hero_eva = max(by_ast$eva_total_num)
+hero_hrs = max(by_ast$eva_total_hrs)
+# bubble plot
+pc6 <- ggplot(by_ast, aes(x=eva_total_num, y=eva_total_hrs)) +
+  geom_smooth(method='lm',
+              formula=y~x,
+              se=FALSE,
+              color="#218ebd") +
+  geom_point() +
+  labs(x="Total Number of EVA", 
+       y="Total Hours of EVA", 
+       title="Individual Cumulative EVA",
+       caption="Data Source: Astronauts Database (Stavnichuk & Corlett 2020)") +
+  theme_minimal() +
+  theme(text=element_text(color = "gray20"),
+        #axis.ticks.x = element_blank(),
+        #axis.text.y = element_blank(),
+        #axis.ticks.y = element_blank(),
+        #scale_y_continuous()
+        plot.margin = margin(t = 0, r = 0, b = 20, l = 5, unit = "pt"),
+        plot.caption=element_text(size=10, hjust=0.5),
+        plot.title = element_text(color = "black", size = 20, hjust=0.5))
+library(ggrepel) 
+pc7 <- pc6 + geom_text_repel(aes(label=paste(name, eva_total_hrs, "hrs", eva_total_num, "times")),
+                color="gray20", size=3,
+                data=filter(by_ast, name %in% hero_name),
+                force=10)
+pc7
+```
+
+
+
+# More Charts
+
+### Mission Participation
+
+Another interesting pattern to explore is the top 10 countries that participated in space missions most frequently.As you can see, U.S. ranks the top with 854 times of mission participation.  
+
+```{r, echo = FALSE}
+# find top 10 countries with the most frequent participation
+by_country <- distinct_ast %>%
+  group_by(nationality) %>%
+  summarise(num_mission_percount = sum(total_number_of_missions), 
+            hrs_mission_percount = sum(total_hrs_sum))
+top10 <- by_country %>%
+  arrange(desc(num_mission_percount)) %>%
+  mutate(rank=row_number()) %>%
+  filter(rank<=10)
+# bar plot
+pc8 <- ggplot(top10, aes(x=reorder(nationality, +num_mission_percount), 
+                  y=num_mission_percount)) +
+  geom_bar(stat="identity", fill="#218ebd") +
+  coord_flip() +
+  labs(x="", 
+       y="Total Number of Missions", 
+       title="Top 10 Countries Considering Paricipation",
+       caption="Data Source: Astronauts Database (Stavnichuk & Corlett 2020)") +
+  geom_text(aes(label=num_mission_percount), 
+            vjust=0.4, hjust=-0.1, show.legend=FALSE) +
+  theme_minimal() +
+  theme(text=element_text(color = "gray20"),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x = element_text(hjust=0.5, size=10),
+        plot.margin = margin(t = 0, r = 0, b = 20, l = 5, unit = "pt"),
+        plot.caption=element_text(size=10, hjust=0.5),
+        plot.title = element_text(color = "black", size = 20, hjust=0.5)) 
+pc8
+```
+
+### Mission-Load of Astronauts
+
+Apart from ranking countries based on number of missions participated, readers may be also interested in astronauts who have completed the most missions or the longest hours of missions. The interactive chart below displays top 100 astronauts based on their number of missions participated and total mission hours. 
+
+```{r, echo = FALSE}
+# find the top 100 astronauts by ranking total hours of missions
+top100 <- distinct_ast %>%
+  arrange(desc(total_hrs_sum)) %>%
+  mutate(rank=row_number()) %>%
+  filter(rank<=100)
+
+#high charter
+pc9 <- hchart(top100,
+       type="bubble",
+       hcaes(x=total_number_of_missions,
+             y=total_hrs_sum,
+             group=nationality)) %>%
+  hc_size(height=400, width=550) %>%
+  hc_title(
+    text="Top 100 Astronauts Considering Mission-Load",
+    align="center",
+    style=list(color="black", fontSize="20px", fontFamily="Arial", useHTML=TRUE)
+  ) %>%
+  hc_caption(text="Data Source: Astronauts Database (Stavnichuk & Corlett 2020)", align="center") %>%
+  hc_yAxis(title=list(text="Total Hour of Missions")) %>%
+  hc_xAxis(title=list(text="Total Number of Missions")) %>%
+  hc_tooltip(pointFormat = "Number: {point.x}<br>Hours: {point.y}") 
+pc9 
+
+```
+### Discussion
+
+As for the final output, I would recommend the second chart in this section. While the first chart provides a clear picture of missions' participation among the top 10 nations, the interactive chart improves reading experience by stimulating readers to explore information that cannot be grasped at the first glance, for example, total hours and total number of missions for a specific astronaut. In addition, the interactive highchart also helps readers to filter countries and make comparison easily.
+
+# Data Table
+
+To allow readers explore more information about a specific astronaut by themselves, a data table could be provided. As for the content, I would recommend to add following columns because the original database may include several rows for one astronaut to record different missions, however, the selected attributes below are distinct values to the corresponding astronauts. As for the format, a bold "Name" helps to catch readers' attention and helps readers to distinguish rows. Moreover, the page option and callback function help reader to redirect to whatever pages they want. By default, readers can use the sorting function attached to each column to explore the record holding achievements of astronauts.
+
+```{r, echo = FALSE}
+library(DT)
+tb_ast <- distinct_ast[,c('name','sex',
+                          'year_of_birth',
+                          'nationality',
+                          'total_number_of_missions',
+                          'total_hrs_sum'
+                          )]
+datatable(tb_ast, rownames=FALSE, colnames = c('Name', 'Sex',
+                                       'Year of Birth',
+                                       'Nationality',
+                                     'Total Number of Missions',
+                                     'Total Hours of Missions'
+                                     ),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Data Source: Astronauts Database (Stavnichuk & Corlett 2020)')
+          ),
+          callback=JS('table.page("next").draw(false);'),
+          options=list(pageLength=5)) %>%
+  formatStyle('name', fontWeight='bold')
+
+```
+
+
