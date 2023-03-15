@@ -2,7 +2,7 @@
 **Author**:  
 Jintong Yu  
 **Description**:  
-Processed data and created *static* plots and *interactive* plots based on queries using visualization packages in R    
+Applied data processing and created *static* and *interactive* plots using visualization packages in R    
 **Packages**:   
 * ggplot2  
 * plotly  
